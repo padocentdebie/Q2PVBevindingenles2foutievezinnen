@@ -20,24 +20,22 @@
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
+        // De definitieve dataset met jouw GIFjes
         const dataSet = [
-            { zin: "Deze stoep ligt anders door de straat als normaal een stoep.", img: "hilarisch1.jpg" },
+            { zin: "Deze stoep ligt anders door de straat als normaal een stoep.", img: "falldownviralhog.gif" },
             { zin: "Gezien als je met je rug naar de straatzijde staat.", img: "hilarisch2.jpg" },
-            { zin: "Ik zag dat hij na een aantal winkels linksaf sloeg.", img: "hilarisch3.jpg" },
+            { zin: "Ik zag dat hij na een aantal winkels linksaf sloeg.", img: "missyperegrymstickit.gif" },
             { zin: "Na het verlaten van de kiosk zag ik dat hij linksaf sloeg.", img: "hilarisch4.jpg" },
-            { zin: "Ik zag de jongen een sprong maken als gevolg van een vermoedelijke vlucht.", img: "hilarisch1.jpg" },
+            { zin: "Ik zag de jongen een sprong maken als gevolg van een vermoedelijke vlucht.", img: "jump.gif" },
             { zin: "Hij wilde controleren of iemand hem zag.", img: "hilarisch2.jpg" },
             { zin: "Eenmaal buiten zag ik dat de jongen linksaf was geslagen.", img: "hilarisch3.jpg" },
             { zin: "Dat kon ik zien doordat hij één keer over zijn schouder naar het verkeer keek.", img: "hilarisch4.jpg" },
             { zin: "Al bukkend zag ik dat hij met zijn linkerhand de krant opvouwde.", img: "hilarisch1.jpg" }
         ];
 
-        // --- LOGIN LOGICA ---
         window.onload = () => {
             const savedName = sessionStorage.getItem("studentName");
-            if (savedName) {
-                showApp(savedName);
-            }
+            if (savedName) showApp(savedName);
         };
 
         window.login = () => {
@@ -45,8 +43,6 @@
             if (name) {
                 sessionStorage.setItem("studentName", name);
                 showApp(name);
-            } else {
-                alert("Vul een naam in om te beginnen.");
             }
         };
 
@@ -56,27 +52,27 @@
             document.getElementById('welcome-msg').innerText = "Ingelogd als: " + name;
         }
 
-        // --- DOCENT ACTIES ---
+        // --- DOCENT ---
         window.nextSentence = () => {
             onValue(ref(db, 'currentStep'), (snapshot) => {
                 const current = snapshot.val() || 0;
                 const next = (current + 1) % dataSet.length;
                 update(ref(db), { currentStep: next });
-                remove(ref(db, 'answers')); 
+                remove(ref(db, 'answers')); // Bord leegmaken voor nieuwe dia
             }, { onlyOnce: true });
         };
 
         window.resetLesson = () => {
-            if(confirm("Database wissen en terug naar het begin?")) {
+            if(confirm("Alles wissen?")) {
                 set(ref(db), { currentStep: 0, answers: {} });
             }
         };
 
-        // --- STUDENT ACTIES ---
+        // --- STUDENT ---
         window.submitAnswer = () => {
             const name = sessionStorage.getItem("studentName");
             const text = document.getElementById('improvement').value.trim();
-            if(!text) return alert("Typ eerst je verbetering!");
+            if(!text) return;
             
             set(ref(db, 'answers/' + name.replace(/\s+/g, '_')), {
                 student: name,
@@ -85,13 +81,12 @@
             document.getElementById('improvement').value = "";
         };
 
-        // --- SYNC ---
+        // --- REALTIME SYNC ---
         onValue(ref(db, 'currentStep'), (snapshot) => {
             const step = snapshot.val() || 0;
-            const currentData = dataSet[step];
-            document.getElementById('displaySentence').innerText = currentData.zin;
-            document.getElementById('stepCounter').innerText = `Oefening ${step + 1} van ${dataSet.length}`;
-            document.getElementById('humorImage').src = currentData.img;
+            document.getElementById('displaySentence').innerText = dataSet[step].zin;
+            document.getElementById('humorImage').src = dataSet[step].img;
+            document.getElementById('stepCounter').innerText = `Vraag ${step + 1} / ${dataSet.length}`;
         });
 
         onValue(ref(db, 'answers'), (snapshot) => {
@@ -110,61 +105,45 @@
     </script>
     <style>
         body { font-family: 'Segoe UI', sans-serif; background: #dfe6e9; padding: 20px; text-align: center; }
-        .box { background: white; padding: 30px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); max-width: 800px; margin: auto; }
-        
-        /* Login scherm */
-        #login-screen { margin-top: 100px; }
-        
-        /* App scherm */
+        .box { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); max-width: 800px; margin: auto; }
         #app-screen { display: none; }
-        .error-sentence { font-size: 1.5em; color: #d63031; margin: 20px 0; background: #fff3f3; padding: 15px; border-radius: 10px; border-left: 5px solid #d63031; }
-        .image-container { width: 100%; max-height: 350px; overflow: hidden; border-radius: 15px; margin-bottom: 20px; }
-        .image-container img { width: 100%; height: auto; }
-        
-        .controls { display: flex; gap: 10px; margin-top: 20px; }
-        input { padding: 15px; border: 2px solid #bdc3c7; border-radius: 8px; font-size: 1em; }
-        button { padding: 12px 25px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
+        .image-container { width: 100%; max-height: 300px; overflow: hidden; border-radius: 10px; margin-bottom: 15px; background: #eee; }
+        .image-container img { width: 100%; height: auto; object-fit: contain; max-height: 300px; }
+        .error-sentence { font-size: 1.4em; color: #d63031; font-style: italic; margin-bottom: 20px; padding: 10px; border-left: 5px solid red; background: #fffafa; }
+        .controls { display: flex; gap: 10px; }
+        input { padding: 12px; border: 2px solid #bdc3c7; border-radius: 8px; flex-grow: 1; }
+        button { padding: 12px 20px; border-radius: 8px; border: none; cursor: pointer; font-weight: bold; }
         .btn-main { background: #00b894; color: white; }
-        
-        #welcome-msg { font-size: 0.8em; color: #636e72; margin-bottom: 10px; }
-        
-        #stickyContainer { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px; margin-top: 30px; }
-        .sticky-note { background: #ffeaa7; padding: 15px; border-radius: 5px; box-shadow: 3px 3px 10px rgba(0,0,0,0.1); transform: rotate(-1deg); text-align: left; }
-        .sticky-note:nth-child(even) { background: #81ecec; transform: rotate(1.5deg); }
-        
-        .admin-box { position: fixed; bottom: 20px; right: 20px; display: flex; gap: 10px; }
+        #stickyContainer { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 15px; margin-top: 25px; }
+        .sticky-note { background: #ffeaa7; padding: 15px; border-radius: 5px; box-shadow: 2px 2px 5px rgba(0,0,0,0.1); transform: rotate(-1deg); text-align: left; }
+        .sticky-note:nth-child(even) { background: #81ecec; transform: rotate(1deg); }
+        .admin-box { position: fixed; bottom: 15px; right: 15px; display: flex; gap: 5px; }
     </style>
 </head>
 <body>
-
-    <div id="login-screen" class="box">
-        <h1>Welkom bij de PV-Training</h1>
-        <p>Vul je naam in om deel te nemen aan de livefeed.</p>
-        <input type="text" id="loginName" placeholder="Je volledige naam">
-        <button class="btn-main" onclick="login()">START LES</button>
+    <div id="login-screen" class="box" style="margin-top: 100px;">
+        <h1>PV-Training Login</h1>
+        <input type="text" id="loginName" placeholder="Je naam">
+        <button class="btn-main" onclick="login()">START</button>
     </div>
 
     <div id="app-screen">
-        <div id="welcome-msg"></div>
+        <div id="welcome-msg" style="margin-bottom: 10px; font-size: 0.9em;"></div>
         <div class="box">
-            <h3 id="stepCounter">Laden...</h3>
-            <div class="image-container">
-                <img id="humorImage" src="" alt="Situatie">
-            </div>
-            <div class="error-sentence" id="displaySentence">Laden...</div>
+            <h4 id="stepCounter">...</h4>
+            <div class="image-container"><img id="humorImage" src=""></div>
+            <div class="error-sentence" id="displaySentence"></div>
             <div class="controls">
-                <input type="text" id="improvement" placeholder="Typ hier de correcte PV-zin..." style="flex-grow: 1;">
-                <button class="btn-main" onclick="submitAnswer()">DEEL VERBETERING</button>
+                <input type="text" id="improvement" placeholder="Schrijf de verbeterde zin...">
+                <button class="btn-main" onclick="submitAnswer()">DEEL</button>
             </div>
         </div>
-
         <div id="stickyContainer"></div>
     </div>
 
     <div class="admin-box">
-        <button onclick="nextSentence()" style="background: #0984e3; color: white;">VOLGENDE DIA</button>
+        <button onclick="nextSentence()" style="background: #0984e3; color: white;">VOLGENDE</button>
         <button onclick="resetLesson()" style="background: #636e72; color: white;">RESET</button>
     </div>
-
 </body>
 </html>
