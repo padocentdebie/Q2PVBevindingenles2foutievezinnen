@@ -20,7 +20,6 @@
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
-        // De definitieve dataset met jouw GIFjes
         const dataSet = [
             { zin: "Deze stoep ligt anders door de straat als normaal een stoep.", img: "falldownviralhog.gif" },
             { zin: "Gezien als je met je rug naar de straatzijde staat.", img: "hilarisch2.jpg" },
@@ -52,23 +51,21 @@
             document.getElementById('welcome-msg').innerText = "Ingelogd als: " + name;
         }
 
-        // --- DOCENT ---
         window.nextSentence = () => {
             onValue(ref(db, 'currentStep'), (snapshot) => {
                 const current = snapshot.val() || 0;
                 const next = (current + 1) % dataSet.length;
                 update(ref(db), { currentStep: next });
-                remove(ref(db, 'answers')); // Bord leegmaken voor nieuwe dia
+                remove(ref(db, 'answers')); 
             }, { onlyOnce: true });
         };
 
         window.resetLesson = () => {
-            if(confirm("Alles wissen?")) {
+            if(confirm("Database wissen voor de hele groep? Studenten blijven ingelogd.")) {
                 set(ref(db), { currentStep: 0, answers: {} });
             }
         };
 
-        // --- STUDENT ---
         window.submitAnswer = () => {
             const name = sessionStorage.getItem("studentName");
             const text = document.getElementById('improvement').value.trim();
@@ -81,7 +78,6 @@
             document.getElementById('improvement').value = "";
         };
 
-        // --- REALTIME SYNC ---
         onValue(ref(db, 'currentStep'), (snapshot) => {
             const step = snapshot.val() || 0;
             document.getElementById('displaySentence').innerText = dataSet[step].zin;
@@ -107,28 +103,32 @@
         body { font-family: 'Segoe UI', sans-serif; background: #dfe6e9; padding: 20px; text-align: center; }
         .box { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); max-width: 800px; margin: auto; }
         #app-screen { display: none; }
-        .image-container { width: 100%; max-height: 300px; overflow: hidden; border-radius: 10px; margin-bottom: 15px; background: #eee; }
-        .image-container img { width: 100%; height: auto; object-fit: contain; max-height: 300px; }
+        .image-container { width: 100%; height: 300px; overflow: hidden; border-radius: 10px; margin-bottom: 15px; background: #eee; display: flex; align-items: center; justify-content: center; }
+        .image-container img { max-width: 100%; max-height: 100%; object-fit: contain; }
         .error-sentence { font-size: 1.4em; color: #d63031; font-style: italic; margin-bottom: 20px; padding: 10px; border-left: 5px solid red; background: #fffafa; }
         .controls { display: flex; gap: 10px; }
         input { padding: 12px; border: 2px solid #bdc3c7; border-radius: 8px; flex-grow: 1; }
-        button { padding: 12px 20px; border-radius: 8px; border: none; cursor: pointer; font-weight: bold; }
+        button { padding: 12px 20px; border-radius: 8px; border: none; cursor: pointer; font-weight: bold; transition: 0.2s; }
+        button:active { transform: scale(0.95); }
         .btn-main { background: #00b894; color: white; }
         #stickyContainer { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 15px; margin-top: 25px; }
-        .sticky-note { background: #ffeaa7; padding: 15px; border-radius: 5px; box-shadow: 2px 2px 5px rgba(0,0,0,0.1); transform: rotate(-1deg); text-align: left; }
+        .sticky-note { background: #ffeaa7; padding: 15px; border-radius: 5px; box-shadow: 2px 2px 5px rgba(0,0,0,0.1); transform: rotate(-1deg); text-align: left; animation: popIn 0.3s ease-out; }
+        @keyframes popIn { from { transform: scale(0); } to { transform: scale(1) rotate(-1deg); } }
         .sticky-note:nth-child(even) { background: #81ecec; transform: rotate(1deg); }
-        .admin-box { position: fixed; bottom: 15px; right: 15px; display: flex; gap: 5px; }
+        .admin-box { position: fixed; bottom: 15px; right: 15px; display: flex; gap: 5px; opacity: 0.8; }
+        .admin-box:hover { opacity: 1; }
     </style>
 </head>
 <body>
     <div id="login-screen" class="box" style="margin-top: 100px;">
-        <h1>PV-Training Login</h1>
-        <input type="text" id="loginName" placeholder="Je naam">
+        <h1>PV-Training Inloggen</h1>
+        <p>Voer je naam in om deel te nemen.</p>
+        <input type="text" id="loginName" placeholder="Voor- en achternaam">
         <button class="btn-main" onclick="login()">START</button>
     </div>
 
     <div id="app-screen">
-        <div id="welcome-msg" style="margin-bottom: 10px; font-size: 0.9em;"></div>
+        <div id="welcome-msg" style="margin-bottom: 10px; font-size: 0.9em; color: #636e72;"></div>
         <div class="box">
             <h4 id="stepCounter">...</h4>
             <div class="image-container"><img id="humorImage" src=""></div>
@@ -142,8 +142,8 @@
     </div>
 
     <div class="admin-box">
-        <button onclick="nextSentence()" style="background: #0984e3; color: white;">VOLGENDE</button>
-        <button onclick="resetLesson()" style="background: #636e72; color: white;">RESET</button>
+        <button onclick="nextSentence()" style="background: #0984e3; color: white;">VOLGENDE DIA</button>
+        <button onclick="resetLesson()" style="background: #636e72; color: white;">RESET LES</button>
     </div>
 </body>
 </html>
