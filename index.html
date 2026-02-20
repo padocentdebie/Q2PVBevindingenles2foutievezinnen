@@ -20,19 +20,43 @@
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
-        // Koppeling tussen zinnen en jouw hilarische afbeeldingen
         const dataSet = [
             { zin: "Deze stoep ligt anders door de straat als normaal een stoep.", img: "hilarisch1.jpg" },
             { zin: "Gezien als je met je rug naar de straatzijde staat.", img: "hilarisch2.jpg" },
             { zin: "Ik zag dat hij na een aantal winkels linksaf sloeg.", img: "hilarisch3.jpg" },
             { zin: "Na het verlaten van de kiosk zag ik dat hij linksaf sloeg.", img: "hilarisch4.jpg" },
-            { zin: "Ik zag de jongen een sprong maken als gevolg van een vermoedelijke vlucht.", img: "hilarisch1.jpg" }, // Je kunt hier rouleren
+            { zin: "Ik zag de jongen een sprong maken als gevolg van een vermoedelijke vlucht.", img: "hilarisch1.jpg" },
             { zin: "Hij wilde controleren of iemand hem zag.", img: "hilarisch2.jpg" },
             { zin: "Eenmaal buiten zag ik dat de jongen linksaf was geslagen.", img: "hilarisch3.jpg" },
             { zin: "Dat kon ik zien doordat hij één keer over zijn schouder naar het verkeer keek.", img: "hilarisch4.jpg" },
             { zin: "Al bukkend zag ik dat hij met zijn linkerhand de krant opvouwde.", img: "hilarisch1.jpg" }
         ];
 
+        // --- LOGIN LOGICA ---
+        window.onload = () => {
+            const savedName = sessionStorage.getItem("studentName");
+            if (savedName) {
+                showApp(savedName);
+            }
+        };
+
+        window.login = () => {
+            const name = document.getElementById('loginName').value.trim();
+            if (name) {
+                sessionStorage.setItem("studentName", name);
+                showApp(name);
+            } else {
+                alert("Vul een naam in om te beginnen.");
+            }
+        };
+
+        function showApp(name) {
+            document.getElementById('login-screen').style.display = 'none';
+            document.getElementById('app-screen').style.display = 'block';
+            document.getElementById('welcome-msg').innerText = "Ingelogd als: " + name;
+        }
+
+        // --- DOCENT ACTIES ---
         window.nextSentence = () => {
             onValue(ref(db, 'currentStep'), (snapshot) => {
                 const current = snapshot.val() || 0;
@@ -48,10 +72,11 @@
             }
         };
 
+        // --- STUDENT ACTIES ---
         window.submitAnswer = () => {
-            const name = document.getElementById('studentName').value.trim();
+            const name = sessionStorage.getItem("studentName");
             const text = document.getElementById('improvement').value.trim();
-            if(!name || !text) return alert("Vul je naam en verbetering in!");
+            if(!text) return alert("Typ eerst je verbetering!");
             
             set(ref(db, 'answers/' + name.replace(/\s+/g, '_')), {
                 student: name,
@@ -60,6 +85,7 @@
             document.getElementById('improvement').value = "";
         };
 
+        // --- SYNC ---
         onValue(ref(db, 'currentStep'), (snapshot) => {
             const step = snapshot.val() || 0;
             const currentData = dataSet[step];
@@ -83,47 +109,62 @@
         });
     </script>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background: #dfe6e9; padding: 20px; }
-        .app-container { max-width: 900px; margin: auto; }
-        .slide { background: white; padding: 30px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); text-align: center; }
-        .error-sentence { font-size: 1.5em; color: #2d3436; margin: 20px 0; background: #fff3f3; padding: 15px; border-radius: 10px; border-left: 5px solid #d63031; }
-        .image-container { width: 100%; max-height: 400px; overflow: hidden; border-radius: 15px; margin-bottom: 20px; border: 3px solid #f1f1f1; }
-        .image-container img { width: 100%; height: auto; object-fit: cover; }
+        body { font-family: 'Segoe UI', sans-serif; background: #dfe6e9; padding: 20px; text-align: center; }
+        .box { background: white; padding: 30px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); max-width: 800px; margin: auto; }
+        
+        /* Login scherm */
+        #login-screen { margin-top: 100px; }
+        
+        /* App scherm */
+        #app-screen { display: none; }
+        .error-sentence { font-size: 1.5em; color: #d63031; margin: 20px 0; background: #fff3f3; padding: 15px; border-radius: 10px; border-left: 5px solid #d63031; }
+        .image-container { width: 100%; max-height: 350px; overflow: hidden; border-radius: 15px; margin-bottom: 20px; }
+        .image-container img { width: 100%; height: auto; }
+        
         .controls { display: flex; gap: 10px; margin-top: 20px; }
-        input { padding: 12px; border: 2px solid #bdc3c7; border-radius: 8px; font-size: 1em; }
-        .btn-send { background: #00b894; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; }
+        input { padding: 15px; border: 2px solid #bdc3c7; border-radius: 8px; font-size: 1em; }
+        button { padding: 12px 25px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
+        .btn-main { background: #00b894; color: white; }
+        
+        #welcome-msg { font-size: 0.8em; color: #636e72; margin-bottom: 10px; }
         
         #stickyContainer { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px; margin-top: 30px; }
-        .sticky-note { background: #ffeaa7; padding: 15px; border-radius: 5px; box-shadow: 3px 3px 10px rgba(0,0,0,0.1); transform: rotate(-1deg); }
+        .sticky-note { background: #ffeaa7; padding: 15px; border-radius: 5px; box-shadow: 3px 3px 10px rgba(0,0,0,0.1); transform: rotate(-1deg); text-align: left; }
         .sticky-note:nth-child(even) { background: #81ecec; transform: rotate(1.5deg); }
         
         .admin-box { position: fixed; bottom: 20px; right: 20px; display: flex; gap: 10px; }
-        .btn-admin { padding: 10px; border-radius: 5px; border: none; cursor: pointer; font-weight: bold; opacity: 0.7; }
-        .btn-admin:hover { opacity: 1; }
     </style>
 </head>
 <body>
 
-<div class="app-container">
-    <div class="slide">
-        <h3 id="stepCounter">Laden...</h3>
-        <div class="image-container">
-            <img id="humorImage" src="" alt="Hilarische situatie">
-        </div>
-        <div class="error-sentence" id="displaySentence">Laden...</div>
-        <div class="controls">
-            <input type="text" id="studentName" placeholder="Naam">
-            <input type="text" id="improvement" placeholder="Schrijf de verbeterde zin..." style="flex-grow: 1;">
-            <button class="btn-send" onclick="submitAnswer()">VERSTUUR</button>
-        </div>
+    <div id="login-screen" class="box">
+        <h1>Welkom bij de PV-Training</h1>
+        <p>Vul je naam in om deel te nemen aan de livefeed.</p>
+        <input type="text" id="loginName" placeholder="Je volledige naam">
+        <button class="btn-main" onclick="login()">START LES</button>
     </div>
-    <div id="stickyContainer"></div>
-</div>
 
-<div class="admin-box">
-    <button class="btn-admin" style="background: #0984e3; color: white;" onclick="nextSentence()">VOLGENDE</button>
-    <button class="btn-admin" style="background: #636e72; color: white;" onclick="resetLesson()">RESET</button>
-</div>
+    <div id="app-screen">
+        <div id="welcome-msg"></div>
+        <div class="box">
+            <h3 id="stepCounter">Laden...</h3>
+            <div class="image-container">
+                <img id="humorImage" src="" alt="Situatie">
+            </div>
+            <div class="error-sentence" id="displaySentence">Laden...</div>
+            <div class="controls">
+                <input type="text" id="improvement" placeholder="Typ hier de correcte PV-zin..." style="flex-grow: 1;">
+                <button class="btn-main" onclick="submitAnswer()">DEEL VERBETERING</button>
+            </div>
+        </div>
+
+        <div id="stickyContainer"></div>
+    </div>
+
+    <div class="admin-box">
+        <button onclick="nextSentence()" style="background: #0984e3; color: white;">VOLGENDE DIA</button>
+        <button onclick="resetLesson()" style="background: #636e72; color: white;">RESET</button>
+    </div>
 
 </body>
 </html>
